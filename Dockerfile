@@ -12,9 +12,9 @@ RUN apt-get -y update && \
     apt-get install -y r-base
 
 # Code
-# RUN git clone -b main https://github.com/idiig/lex-change.git
-RUN mkdir lex-change
-COPY ./ /opt/app/lex-change
+RUN git clone -b master https://github.com/idiig/lex-change.git
+# RUN mkdir lex-change
+# COPY ./ /opt/app/lex-change
 
 # Python dependencies
 RUN pip install -r lex-change/requirements.lock
