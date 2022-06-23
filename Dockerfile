@@ -20,4 +20,4 @@ RUN git clone -b master https://github.com/idiig/lex-change.git
 RUN pip install -r lex-change/requirements.lock
 
 # Data
-RUN wget -c https://github.com/yamagen/hachidaishu/raw/main/hachidai.db -P lex-change/data/hachidai.db
+RUN wget -c https://github.com/yamagen/hachidaishu/raw/main/hachidai.db -P lex-change/data
