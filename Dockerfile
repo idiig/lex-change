@@ -1,6 +1,6 @@
 FROM python:3.8-buster as builder
 
-MAINTAINER Xudong Chen <avionplat@hotmail.com>
+LABEL maintainer="avionplat@hotmail.com"
 
 WORKDIR /opt/app
 COPY requirements.lock /opt/app
@@ -16,8 +16,7 @@ RUN apt-get -y update && \
 RUN pip install -r requirements.lock
 
 # Data
-RUN mkdir data &&\
-    wget -c https://github.com/yamagen/hachidaishu/raw/main/hachidai.db -P data
+RUN wget -c https://github.com/yamagen/hachidaishu/raw/main/hachidai.db -P data
 
 # Code
-RUN git clone -b main https://github.com/idiig/lex-change
+RUN git clone -b main https://github.com/idiig/lex-change.git
