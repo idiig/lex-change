@@ -12,6 +12,9 @@ RUN apt-get -y update && \
     apt-get install -yq gcc g++ && \
     apt-get install -y r-base
 
+# Data
+RUN mkdir data &&\
+    wget -c https://github.com/yamagen/hachidaishu/raw/main/hachidai.db -P data
+
 # Python dependencies
-RUN pip install --upgrade pip && \
-    pip install -r requirements.lock
+RUN pip install -r requirements.lock
