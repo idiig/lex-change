@@ -3,7 +3,6 @@ FROM python:3.8-buster as builder
 LABEL maintainer="avionplat@hotmail.com"
 
 WORKDIR /opt/app
-COPY requirements.lock /opt/app
 
 # Environment
 RUN apt-get -y update && \
@@ -13,6 +12,7 @@ RUN apt-get -y update && \
     apt-get install -y r-base
 
 # Python dependencies
+COPY requirements.lock /opt/app
 RUN pip install -r requirements.lock
 
 # Data
