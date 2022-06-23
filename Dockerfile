@@ -11,16 +11,13 @@ RUN apt-get -y update && \
     apt-get install -yq gcc g++ && \
     apt-get install -y r-base
 
-# Python dependencies
-COPY requirements.lock /opt/app
-RUN pip install -r requirements.lock
-
-# Data
-RUN mkdir data && \
-    wget -c https://github.com/yamagen/hachidaishu/raw/main/hachidai.db -P data/hachidai.db
-
 # Code
 # RUN git clone -b main https://github.com/idiig/lex-change.git
 RUN mkdir lex-change
 COPY * /opt/app/lex-change
 
+# Python dependencies
+RUN pip install -r lex-change/requirements.lock
+
+# Data
+RUN wget -c https://github.com/yamagen/hachidaishu/raw/main/hachidai.db -P lex-change/data/hachidai.db
