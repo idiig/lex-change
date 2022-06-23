@@ -1,10 +1,13 @@
 import pandas as pd
 import json
 
-PATH = "../data/hachidai.db"
+INPUT = "../data/hachidai.db"
+INDEX = "../data/id2lemma.json"
+# INV_INDEX_PATH = "../data/lemma2id.json"
+OUTPUT = "../data/parsed_hd.csv"
 
 # read data
-hd = pd.read_table(PATH,
+hd = pd.read_table(INPUT,
                    usecols=range(9),
                    sep=" ",
                    names=[
@@ -35,8 +38,8 @@ for bg_id in hd.bg_id.unique():
     id2lemma[bg_id] = (hd[hd.bg_id == bg_id]["lemma"].unique()[0],
                        hd[hd.bg_id == bg_id]["lemma_reading"].unique()[0])
 
-with open('data/id2lemma.json') as d:
-    id2lemma = json.load(d)
+with open(INDEX, 'w', encoding='utf-8') as f:
+    f.write(json.dumps(id2lemma))
 
 
 def token2string(corpus, anthology_poem_id):
@@ -58,4 +61,15 @@ poem = pd.DataFrame(
     columns=['id', 'source'],
 )
 poem = poem.sort_values(by='id', ignore_index=True)
-print(poem)
+
+# surface str
+poem_sfc = pd.DataFrame(list(poem_sfc_dic.items()),
+                        columns=['id', 'src_surface'])
+poem_sfc = poem_sfc.sort_values(by='id', ignore_index=True)
+
+# merge
+parsed_poem = pd.merge(poem, poem_sfc)
+
+# output
+parsed_poem.to_csv(OUTPUT, index=False)
+print("finished preprocess")
