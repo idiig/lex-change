@@ -14,7 +14,7 @@ RUN apt-get -y update && \
 # Code
 # RUN git clone -b main https://github.com/idiig/lex-change.git
 RUN mkdir lex-change
-COPY * /opt/app/lex-change
+COPY ./ /opt/app/lex-change
 
 # Python dependencies
 RUN pip install -r lex-change/requirements.lock
