@@ -51,3 +51,11 @@ for poem in hd.anthology_poem_id.unique():
     id_str, surface_str = token2string(hd, poem)
     poem_id_dic[poem] = ','.join(id_str)  # tokenized str
     poem_sfc_dic[poem] = ''.join(surface_str)  # surface str
+
+# tokenized str
+poem = pd.DataFrame(
+    list(poem_id_dic.items()),
+    columns=['id', 'source'],
+)
+poem = poem.sort_values(by='id', ignore_index=True)
+print(poem)
