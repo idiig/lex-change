@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 
-PATH = "data/hachidai.db"
+PATH = "../data/hachidai.db"
 
 # read data
 hd = pd.read_table(PATH,
