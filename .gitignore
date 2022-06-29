@@ -4,3 +4,4 @@
 *.png
 *.html
 *__pycache__
+*.~undo-tree~
