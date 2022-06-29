@@ -1,5 +1,12 @@
-import pandas as pd
+"""
+Preprocess data.
+
+input: Hachidaishu vocabulary dataset.
+output: split database of Hachidaishu.
+"""
+
 import json
+import pandas as pd
 
 INPUT = "../data/hachidai.db"
 INDEX = "../data/id2lemma.json"
@@ -43,6 +50,14 @@ with open(INDEX, 'w', encoding='utf-8') as f:
 
 
 def token2string(corpus, anthology_poem_id):
+    """From tokenized units to original string.
+
+    :param corpus: pandas dataframe, hachidaishu vocabulary dataset
+    :param anthology_poem_id: str, anthology id:poem id
+
+    :return t.bg_id: token id sequence
+    :return t.surface: token surface form sequence
+    """
     t = corpus[corpus.anthology_poem_id.str.match(anthology_poem_id)]
     return t.bg_id, t.surface
 
