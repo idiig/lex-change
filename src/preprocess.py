@@ -44,7 +44,8 @@ print("reformed data.")
 
 # obtain dictionary from metacode to lemma
 id2lemma = {}
-bar = tqdm(hd.bg_id.unique())
+test = list(hd.bg_id.unique())
+bar = tqdm(test)
 for bg_id in bar:
     bar.set_description(f"processing {bg_id}")
     id2lemma[bg_id] = (hd[hd.bg_id == bg_id]["lemma"].unique()[0],
@@ -71,7 +72,7 @@ def token2string(corpus, anthology_poem_id):
 poem_id_dic = {}
 poem_sfc_dic = {}
 
-bar = tqdm(hd.anthology_poem_id.unique())
+bar = tqdm(list(hd.anthology_poem_id.unique()))
 for poem in bar:
     bar.set_description(f"processing {poem}")
     id_str, surface_str = token2string(hd, poem)
