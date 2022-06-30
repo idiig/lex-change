@@ -6,6 +6,7 @@ output: split database of Hachidaishu.
 """
 
 import json
+import tqdm
 import pandas as pd
 
 INPUT = "../data/hachidai.db"
@@ -43,12 +44,15 @@ print("reformed data.")
 
 # obtain dictionary from metacode to lemma
 id2lemma = {}
-for bg_id in hd.bg_id.unique():
+bar = tqdm(hd.bg_id.unique())
+for bg_id in bar:
+    bar.set_description(f"processing {bg_id}")
     id2lemma[bg_id] = (hd[hd.bg_id == bg_id]["lemma"].unique()[0],
                        hd[hd.bg_id == bg_id]["lemma_reading"].unique()[0])
 
 with open(INDEX, "w", encoding="utf-8") as f:
     f.write(json.dumps(id2lemma))
+print("output id2lemma.")
 
 
 def token2string(corpus, anthology_poem_id):
@@ -67,7 +71,9 @@ def token2string(corpus, anthology_poem_id):
 poem_id_dic = {}
 poem_sfc_dic = {}
 
-for poem in hd.anthology_poem_id.unique():
+bar = tqdm(hd.anthology_poem_id.unique())
+for poem in bar:
+    bar.set_description(f"processing {poem}")
     id_str, surface_str = token2string(hd, poem)
     poem_id_dic[poem] = ",".join(id_str)  # tokenized str
     poem_sfc_dic[poem] = "".join(surface_str)  # surface str
@@ -86,7 +92,8 @@ poem_sfc = poem_sfc.sort_values(by="id", ignore_index=True)
 
 # merge
 parsed_poem = pd.merge(poem, poem_sfc)
+print("processed str data.")
 
 # output
 parsed_poem.to_csv(OUTPUT, index=False)
-print("finished preprocess")
+print("output parsed data.")
