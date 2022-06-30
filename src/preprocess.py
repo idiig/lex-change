@@ -44,7 +44,8 @@ print("reformed data.")
 
 # obtain dictionary from metacode to lemma
 id2lemma = {}
-bar = tqdm(list(hd.bg_id.unique()))
+test = list(hd.bg_id.unique())
+bar = tqdm(test)
 for bg_id in bar:
     bar.set_description(f"processing {bg_id}")
     id2lemma[bg_id] = (hd[hd.bg_id == bg_id]["lemma"].unique()[0],
