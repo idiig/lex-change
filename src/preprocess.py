@@ -6,7 +6,7 @@ output: split database of Hachidaishu.
 """
 
 import json
-import tqdm
+from tqdm import tqdm
 import pandas as pd
 
 INPUT = "../data/hachidai.db"
