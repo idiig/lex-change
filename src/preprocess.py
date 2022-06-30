@@ -21,6 +21,7 @@ hd = pd.read_table(INPUT,
                        "id", "token_type", "bg_id", "chasen_id", "surface",
                        "lemma", "lemma_reading", "kanji", "kanji_reading"
                    ])
+print("loaded raw text data.")
 
 # reform data
 hd = hd.assign(anthology_id=hd["id"].map(lambda x: x.split(":")[0]))
@@ -38,6 +39,7 @@ hd = hd[hd.token_type.str.match("A00") |  # conventionized lexemes
         hd.token_type.str.match("B00") |  # compounds
         hd.token_type.str.match("D00")  # proper namen compounds
         ]
+print("reformed data.")
 
 # obtain dictionary from metacode to lemma
 id2lemma = {}
