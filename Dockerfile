@@ -12,7 +12,7 @@ RUN apt-get -y update && \
     apt-get install -y r-base
 
 # Code
-RUN git clone -b master https://github.com/idiig/lex-change.git
+RUN git clone -b master --depth=1 https://github.com/idiig/lex-change.git
 # RUN mkdir lex-change
 # COPY ./ /opt/app/lex-change
 
