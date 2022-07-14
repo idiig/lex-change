@@ -51,4 +51,4 @@ def split_corpus(period=period_id, corpus=hd):
     return sub_corpus_a, sub_corpus_b
 
 
-sub_corpus_a, sub_corpus_b = split_corpus('shui', corpus=hd)
+sub_corpus_a, sub_corpus_b = split_corpus(period=period_id, corpus=hd)
