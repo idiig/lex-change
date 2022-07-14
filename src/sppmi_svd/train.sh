@@ -18,3 +18,4 @@ python save_joint_pmi.py --dic_id2word dic_id2word.pkl \
        --path_models model/after_SPPMI_w-2_s-1 model/before_SPPMI_w-2_s-1 \
        --dim 1000
 
+mv model/ ../../cache/sppmi-model/
