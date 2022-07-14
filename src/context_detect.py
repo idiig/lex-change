@@ -24,7 +24,7 @@ periods = {
 }
 
 hd = pd.read_csv(CORPUS)
-period_id = int(periods[period])
+period_id = int(periods[PERIOD])
 
 
 def split_corpus(period=period_id, corpus=hd):
