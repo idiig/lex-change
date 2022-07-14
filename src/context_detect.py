@@ -9,7 +9,7 @@ Use algorithm proposed by
 import pandas as pd
 import json
 
-CORPUS = "../data/parsed_data.csv"
+CORPUS = "../data/parsed_hd.csv"
 PERIOD = "shui"
 
 periods = {
