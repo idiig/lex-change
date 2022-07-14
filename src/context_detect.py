@@ -7,6 +7,7 @@ Use algorithm proposed by
 """
 
 import pandas as pd
+import subprocess
 import json
 
 CORPUS = "../data/parsed_hd.csv"
