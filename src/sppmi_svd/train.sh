@@ -15,6 +15,6 @@ python main.py --file_path ../../cache/after.txt \
     --threshold 0 --has_cds --window_size 2 --shift 1
 
 python save_joint_pmi.py --dic_id2word dic_id2word.pkl \
-       --path_models ../../cache/after_sppmi ../../cache/before_sppmi \
+       --path_models model/after_SPPMI_w-2_s-1 model/before_SPPMI_w-2_s-1
        --dim 1000
 
