@@ -60,5 +60,6 @@ p = subprocess.Popen("cd sppmi_svd; sh train.py",
                      stdout=subprocess.PIPE,
                      stderr=subprocess.PIPE)
 
+p.communicate()
 # for line in p.stdout:
 #     print()
