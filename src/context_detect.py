@@ -54,7 +54,7 @@ def split_corpus(period=period_id, corpus=hd):
 
 sub_corpus_a, sub_corpus_b = split_corpus(period=period_id, corpus=hd)
 
-p = subprocess.Popen("cd sppmi_svd; sh train.py",
+p = subprocess.Popen("cd sppmi_svd; sh train.sh",
                      shell=True,
                      universal_newlines=True,
                      stdout=subprocess.PIPE,
