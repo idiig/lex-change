@@ -54,21 +54,13 @@ def split_corpus(period=period_id, corpus=hd):
 
 sub_corpus_a, sub_corpus_b = split_corpus(period=period_id, corpus=hd)
 
-task = "cd sppmi_svd; sh train.sh"
+p = subprocess.Popen("cd sppmi_svd; sh train.sh",
+                     shell=True,
+                     universal_newlines=True,
+                     stdout=subprocess.PIPE,
+                     stderr=subprocess.PIPE)
 
-
-@staticmethod
-def run_task(task, t):
-    p = subprocess.Popen(task,
-                         shell=True,
-                         universal_newlines=True,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    t.write(p.stdout.readline().decode("utf-8"))
-
-
-# output, error = p.communicate()
-
-# print(output, error)
+p.communicate()
+print("trained vectors.")
 # for line in p.stdout:
 #     print(line)
