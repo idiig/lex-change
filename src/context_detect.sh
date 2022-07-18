@@ -32,4 +32,4 @@ python most_changed.py -p dic_id2word.pkl \
        -w res/context_words.txt
 
 mv res/* ../../cache/
-mv model/* ../../cache/sppmi-model/
+mv model ../../cache/sppmi-model
