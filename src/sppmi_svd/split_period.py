@@ -3,6 +3,17 @@ import pandas as pd
 import logging
 from tqdm import tqdm
 
+period_dic = {
+    1: "kokin",
+    2: "gosen",
+    3: "shui",
+    4: "goshui",
+    5: "kinyo",
+    6: "shika",
+    7: "sensai",
+    8: "shinkokin"
+}
+
 
 def main(args):
     """Split hachidaishu into two.
@@ -13,6 +24,8 @@ def main(args):
     """
     assert type(args.period) == int
     assert type(args.path_docs) == str
+
+    period = period_dic[args.period]
 
     logging.basicConfig(format="%(asctime)s %(message)s", level=logging.INFO)
     logging.info(f"[INFO] args: {args}")
@@ -28,10 +41,10 @@ def main(args):
               mode="wt") as out_f_a,\
         open(args.path_output_after,
              mode="wt") as out_f_b:
-        logging.info(f"[INFO] Write poems before {args.period}.")
+        logging.info(f"[INFO] Write poems before {period}.")
         for line in tqdm(sub_corpus_a["source"].str.split(",").tolist()):
             out_f_a.write(" ".join(line) + "\n")
-        logging.info("[INFO] Write poems after {args.period}.")
+        logging.info(f"[INFO] Write poems after {period}.")
         for line in tqdm(sub_corpus_b["source"].str.split(",").tolist()):
             out_f_b.write(" ".join(line) + "\n")
     logging.info("[INFO] Finished.")
