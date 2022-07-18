@@ -54,7 +54,10 @@ def cli_main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--dic_id2word", help="path of id2word dict")
     parser.add_argument("-m", "--path_model", help="path of model/matrix file")
-    parser.add_argument("-n", "--top_n", help="top n most changed words")
+    parser.add_argument("-n",
+                        "--top_n",
+                        type=int,
+                        help="top n most changed words")
     args = parser.parse_args()
     main(args)
 
