@@ -40,10 +40,10 @@ def main(args):
     logging.info("[INFO] Done.")
     id2change = dict(sorted(id2change.items(), key=lambda item: item[1]))
     logging.info("[INFO] Writing output.")
-    with open("id2change.txt", "w") as fp:
+    with open(args.path_id2change, "w") as fp:
         fp.write(json.dumps(id2change))
     context_words = list(id2change.keys())[:args.top_n]
-    with open("context_words.txt", "w") as fp:
+    with open(args.path_context_word, "w") as fp:
         for word in context_words:
             fp.write(f"{word}\n")
     logging.info("[INFO] Done.")
@@ -58,6 +58,12 @@ def cli_main():
                         "--top_n",
                         type=int,
                         help="top n most changed words")
+    parser.add_argument("-o",
+                        "--path_id2change",
+                        help="path of id with degree of change")
+    parser.add_argument("-w",
+                        "--path_context_word",
+                        help="path of extracted context words")
     args = parser.parse_args()
     main(args)
 
