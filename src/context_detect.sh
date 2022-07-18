@@ -3,7 +3,7 @@ cd sppmi_svd
 
 python split_period.py -d ../../data/parsed_hd.csv \
        -a ../../cache/after.txt \
-       -b ../../cache/before \
+       -b ../../cache/before.txt \
        -p 3
 
 python counter_from_doc.py -f ../../cache/before.txt -c before.pkl
