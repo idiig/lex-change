@@ -61,6 +61,5 @@ p = subprocess.Popen("cd sppmi_svd; sh train.sh",
                      stderr=subprocess.PIPE)
 
 p.communicate()
-print("trained vectors.")
 # for line in p.stdout:
 #     print(line)
