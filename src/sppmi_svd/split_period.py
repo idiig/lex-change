@@ -16,12 +16,7 @@ period_dic = {
 
 
 def main(args):
-    """Split hachidaishu into two.
-
-    :param period: pseudo shift point: str
-    :param corpus: whole corpus: pandas dataframe
-    :return: splited sub corpus
-    """
+    """Split hachidaishu into two."""
     assert type(args.period) == int
     assert type(args.path_docs) == str
 
@@ -57,7 +52,7 @@ def cli_main():
     parser.add_argument("-b",
                         "--path_output_before",
                         help="path of before part")
-    parser.add_argument("-p", "--period", type=int, help="period to split")
+    parser.add_argument("-p", "--period", type=int, help="pseudo shift period")
     args = parser.parse_args()
     main(args)
 
