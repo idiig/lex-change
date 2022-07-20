@@ -6,6 +6,7 @@ output: split database of Hachidaishu.
 """
 
 import json
+import logging
 from tqdm import tqdm
 import pandas as pd
 
@@ -15,6 +16,7 @@ INDEX = "../data/id2lemma.json"
 OUTPUT = "../data/parsed_hd.csv"
 
 # read data
+logging.info('[INFO] loading raw text data...')
 hd = pd.read_table(INPUT,
                    usecols=range(9),
                    sep=" ",
@@ -22,8 +24,9 @@ hd = pd.read_table(INPUT,
                        "id", "token_type", "bg_id", "chasen_id", "surface",
                        "lemma", "lemma_reading", "kanji", "kanji_reading"
                    ])
-print("loaded raw text data.")
+logging.info('[INFO] loaded raw text data.')
 
+logging.info('[INFO] reforming data format...')
 # reform data
 hd = hd.assign(anthology_id=hd["id"].map(lambda x: x.split(":")[0]))
 hd = hd.assign(poem_id=hd["id"].map(lambda x: x.split(":")[1]))
@@ -40,7 +43,7 @@ hd = hd[hd.token_type.str.match("A00") |  # conventionized lexemes
         hd.token_type.str.match("B00") |  # compounds
         hd.token_type.str.match("D00")  # proper namen compounds
         ]
-print("reformed data.")
+logging.info('[INFO] reformed data format.')
 
 # obtain dictionary from metacode to lemma
 id2lemma = {}
@@ -53,7 +56,7 @@ for bg_id in bar:
 
 with open(INDEX, "w", encoding="utf-8") as f:
     f.write(json.dumps(id2lemma))
-print("output id2lemma.")
+logging.info('[INFO] wrote id2lemma.')
 
 
 def token2string(corpus, anthology_poem_id):
@@ -93,8 +96,8 @@ poem_sfc = poem_sfc.sort_values(by="id", ignore_index=True)
 
 # merge
 parsed_poem = pd.merge(poem, poem_sfc)
-print("processed str data.")
+logging.info('[INFO] processed str data.')
 
 # output
 parsed_poem.to_csv(OUTPUT, index=False)
-print("output parsed data.")
+logging.info('[INFO] wrote parsed data.')
