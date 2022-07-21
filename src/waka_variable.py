@@ -401,34 +401,34 @@ def search(k, alpha, beta, gamma, window_size, TOP):
         lambda x: tuple([id2lemma[l][1] for l in x]))
     summary['average_similarity'] = list(zip(*C_final))[1]
     summary.to_csv(
-        './drive/MyDrive/PhD/waka_trans_period/res/k-{};alpha-{};beta-{};gamma-{};window_size-{};TOP-{}.csv'
-        .format(k, alpha, beta, gamma, window_size, TOP),
+        '../res/k-{};alpha-{};beta-{};gamma-{};window_size-{};TOP-{}.csv'.
+        format(k, alpha, beta, gamma, window_size, TOP),
         index=False)
 
     return summary
 
 
-search(k=50, alpha=0.5, beta=0.8, gamma=0.6, window_size=2, TOP=500)
+# search(k=50, alpha=0.5, beta=0.8, gamma=0.6, window_size=2, TOP=500)
 
-search(k=50, alpha=0.5, beta=0.8, gamma=0.6, window_size=2, TOP=1000)
+# search(k=50, alpha=0.5, beta=0.8, gamma=0.6, window_size=2, TOP=1000)
 
-search(k=50, alpha=0.5, beta=0.8, gamma=0.6, window_size=3, TOP=500)
+# search(k=50, alpha=0.5, beta=0.8, gamma=0.6, window_size=3, TOP=500)
 
-search(k=50, alpha=0.5, beta=0.8, gamma=0.6, window_size=3, TOP=1000)
+# search(k=50, alpha=0.5, beta=0.8, gamma=0.6, window_size=3, TOP=1000)
 
-search(k=50, alpha=0.5, beta=0.4, gamma=0.2, window_size=2, TOP=1000)
+# search(k=50, alpha=0.5, beta=0.4, gamma=0.2, window_size=2, TOP=1000)
 
-search(k=50, alpha=0.1, beta=0.4, gamma=0.6, window_size=2, TOP=1000)
+# search(k=50, alpha=0.1, beta=0.4, gamma=0.6, window_size=2, TOP=1000)
 
-search(k=50, alpha=0.3, beta=0.8, gamma=0.6, window_size=2, TOP=1000)
+# search(k=50, alpha=0.3, beta=0.8, gamma=0.6, window_size=2, TOP=1000)
 
-search(k=50, alpha=0.3, beta=0.8, gamma=0.4, window_size=2, TOP=1000)
+# search(k=50, alpha=0.3, beta=0.8, gamma=0.4, window_size=2, TOP=1000)
 
-search(k=50, alpha=0.3, beta=0.8, gamma=0.4, window_size=3, TOP=1000)
+# search(k=50, alpha=0.3, beta=0.8, gamma=0.4, window_size=3, TOP=1000)
 
-search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=4, TOP=1000)
+# search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=4, TOP=1000)
 
-search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=2, TOP=2000)
+# search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=2, TOP=2000)
 """# Test 2"""
 
 R = target_lemma_lst
