@@ -19,8 +19,8 @@ from warnings import simplefilter
 simplefilter("ignore", ClusterWarning)
 
 # load data
-with open('../data/id2lemma.json', "w") as d, \
-     open("../cache/context_words.txt", "w") as c:
+with open('../data/id2lemma.json') as d, \
+     open("../cache/context_words.txt") as c:
     id2lemma = json.load(d)
     feature = c.read().split("\n")
 
@@ -51,14 +51,14 @@ print('numbers of tokens: %s' % sum(hd.source.str.split(',').map(len)))
 # clean后token数
 # print('numbers of tokens: %s' % sum(hd.cleaned.map(len)))
 # clean后type数
-print('numbers of types: %s' % len(lemma_lst))
+print('numbers of types: %s' % len(target_lemma_lst))
 """# Functions
 
 ## Co-occurrence frequency matrix
 """
 
 
-def co_oc_mat(texts, window_size):
+def co_oc_mat(texts, window_size, lemma_lst=target_lemma_lst):
     """Obtain co-occcurrence count matrix."""
     count_d = defaultdict(int)
     token_set = set()
@@ -429,127 +429,3 @@ def search(k, alpha, beta, gamma, window_size, TOP):
 # search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=4, TOP=1000)
 
 # search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=2, TOP=2000)
-"""# Test 2"""
-
-R = target_lemma_lst
-n = 0
-C_final = []
-while R != []:
-    n += 1
-    # initial clustered committee
-    C = committee(R)
-    # filter and sort
-    C = filer_sort(C)
-    # merge part1
-    CFreqM, CppmiM, ComM = merge_1(C, FreqM)
-    # merge part2
-    new_C_s = merge_2(ComM)
-    # repeat merge1
-    C_new = sorted(new_C_s, key=lambda x: x[1])
-    print(C_new)
-    CFreqM_new, CppmiM_new, ComM_new = merge_1(C_new, FreqM)
-    R = residuals(R, CppmiM_new)
-    for c_new in C_new:
-        c_new_checked = True
-        for c_old in C_final:
-            if set(c_old[0]).issubset(c_new[0]):
-                C_final.remove(c_old)
-            if set(c_new[0]).issubset(c_old[0]):
-                c_new_checked = False
-        if (c_new not in C_final) & (c_new_checked):
-            C_final.append(c_new)
-    print(n, R)
-
-C_final = sorted(C_final, key=lambda x: x[1])
-
-len(C_final)
-
-summary = pd.DataFrame()
-summary['bg_id'] = list(zip(*C_final))[0]
-summary['lemma'] = summary.bg_id.map(
-    lambda x: tuple([id2lemma[l][0] for l in x]))
-summary['reading'] = summary.bg_id.map(
-    lambda x: tuple([id2lemma[l][1] for l in x]))
-summary['average_similarity'] = list(zip(*C_final))[1]
-
-summary
-"""# Test"""
-
-gamma = 0.6
-k = 50
-alpha = 0.2
-beta = 0.8
-gamma = 0.6
-
-TOP = 500
-
-token_lst = []
-for poem in hd.cleaned:
-    token_lst += poem
-
-lemma_freq_dic = dict(OrderedDict(Counter(token_lst).most_common()))
-target_lemma_lst = nlargest(TOP, lemma_freq_dic, key=lemma_freq_dic.get)
-R = target_lemma_lst
-
-# initial matrice
-FreqM = co_oc_mat(hd.source.str.split(','), window_size)
-ppmiM = ppmi(FreqM)
-CosM = sim_mat(ppmiM, target_lemma_lst)
-
-CosM = sim_mat(ppmiM, target_lemma_lst)
-
-R = target_lemma_lst[:500]
-R = ['BG-02-1521-05-0101']
-# CosM = CosM.loc[R,R]
-
-cluster(CosM.loc[R, R], R[0], k, alpha)
-
-C = committee(R, CosM)
-print(len(C))
-C = filer_sort(C, CosM)
-len(C)
-
-avg_sim(CosM, ('BG-02-3394-07-0100', 'BG-01-5151-01-0100'))
-
-CosM.loc['BG-02-3394-07-0100', 'BG-01-5151-01-0100']
-
-for x in C:
-    for l in x[0]:
-        l = id2lemma[l][0]
-        print(l)
-    print(x[1])
-
-CFreqM, CppmiM, ComM = merge_1(C, FreqM)
-
-CppmiM
-
-new_C_s = merge_2(ComM, CosM)
-
-len(new_C_s)
-
-for x in new_C_s:
-    for l in x[0]:
-        l = id2lemma[l][0]
-        print(l)
-    print(x[1])
-
-len(R)
-C_new = sorted(new_C_s, key=lambda x: x[1])
-CFreqM_new, CppmiM_new, ComM_new = merge_1(C_new, FreqM)
-len(residuals(R, CppmiM_new))
-
-CFreqM_new
-
-print(len(R))
-print(R)
-CosM = CosM.loc[R, R]
-C = committee(R)
-C = filer_sort(C)
-print(C)
-CFreqM, CppmiM, ComM = merge_1(C, FreqM)
-c_lst = ComM.columns
-new_C_s = merge_2(c_lst)
-C_new = sorted(new_C_s, key=lambda x: x[1])
-CfreqM_new, CppmiM_new, ComM_new = merge_1(C_new, FreqM)
-R = residuals(R, CppmiM_new)
-print(C_new)
