@@ -31,60 +31,39 @@ lemma_lst = [x for x in id2lemma.keys() if x.split('-')[1] not in stop_lst]
 hd['cleaned'] = hd.source.map(
     lambda x: [x for x in x.split(',') if x in lemma_lst])
 
-gamma = 0.6
-k = 50
-alpha = 0.2
-beta = 0.8
-gamma = 0.6
-TOP = 500
-
-token_lst = []
-for poem in hd.cleaned:
-    token_lst += poem
-
-lemma_freq_dic = dict(OrderedDict(Counter(token_lst).most_common()))
-target_lemma_lst = nlargest(TOP, lemma_freq_dic, key=lemma_freq_dic.get)
-R = target_lemma_lst
-
 # 总处理token数
 print('numbers of tokens: %s' % sum(hd.source.str.split(',').map(len)))
-# clean后token数
-# print('numbers of tokens: %s' % sum(hd.cleaned.map(len)))
 # clean后type数
-print('numbers of types: %s' % len(target_lemma_lst))
+print('numbers of types: %s' % len(lemma_lst))
 """# Functions
 
 ## Co-occurrence frequency matrix
 """
 
 
-def co_oc_mat(texts, window_size, lemma_lst=target_lemma_lst):
-    """Obtain co-occcurrence count matrix."""
+def co_oc_mat(texts, window_size):
     count_d = defaultdict(int)
-    token_set = set()
+    types = set()
     for text in texts:
         for i in range(len(text)):
             token = text[i]
-            if token in lemma_lst:
-                token_set.add(token)
-                next_token = text[i + 1:i + 1 + window_size]
-                for t in next_token:
-                    if t in feature:
-                        key = tuple(sorted([t, token]))
-                        count_d[key] += 1
-    token_set = sorted(token_set)
-    mat = pd.DataFrame(data=np.zeros((len(token_set), len(token_set)),
+            types.add(token)
+            next_token = text[i + 1:i + 1 + window_size]
+            for t in next_token:
+                key = tuple(sorted([t, token]))
+                count_d[key] += 1
+
+    types = sorted(types)
+    mat = pd.DataFrame(data=np.zeros((len(feature), len(types)),
                                      dtype=np.int16),
-                       index=token_set,
-                       columns=token_set)
+                       index=feature,
+                       columns=types)
+
     for key, value in count_d.items():
         mat.at[key[0], key[1]] = value
         mat.at[key[1], key[0]] = value
 
     return mat
-
-
-"""## PPMI matrix"""
 
 
 def ppmi(freq_mat):
@@ -95,17 +74,13 @@ def ppmi(freq_mat):
     row_totals = df.sum(axis=1)
     expected = np.outer(row_totals, col_totals) / total
     df = df / expected
-    # Silence distracting warnings about log(0):
     with np.errstate(divide='ignore'):
-        df = np.log(df)
+        df = np.log2(df)
     df[np.isinf(df)] = 0.0  # log(0) = 0
     df[np.isnan(df)] = 0.0
     df[df < 0] = 0.0
 
     return df
-
-
-"""## Cosine similarity matrix"""
 
 
 def cosin_sim(v_i, v_j):
@@ -155,20 +130,16 @@ def cluster(cos_mat, l, k, alpha):
                     C[label] += (lemma[0], )
                     C[label] = tuple(sorted(C[label]))
         res = list(C.values())
-    # print(C)
 
     return res
 
 
-def committee(target_lemma_lst, cos_mat):
+def committee(target_lemma_lst, cos_mat, k, alpha):
     C = []
     for l in target_lemma_lst:
         C += cluster(cos_mat.loc[target_lemma_lst, target_lemma_lst], l, k,
                      alpha)
     return C
-
-
-"""## Committee filter and sort"""
 
 
 def avg_sim(cos_mat, c):
@@ -220,28 +191,19 @@ def filer_sort(C, cos_mat):
     return res
 
 
-"""## Merge 1"""
-
-
 # merging loop
-def merge_1(C, freq_mat):
-    C_with_vec = []
-    for c in C:
-        avg_freq_vec = np.array(freq_mat[list(c[0])].mean(axis=1))
-        c = c + (avg_freq_vec, )
-        C_with_vec.append(c)
-
+def merge_1(C, freq_mat, feature=feature):
     c_vec_dic = {}
-    for c in C_with_vec:
-        c_vec_dic[str(c[0])[1:-1]] = list(c[-1])
+    for c in C:
+        avg_freq_vec = freq_mat[list(c[0])].mean(axis=1)
+        c_vec_dic[str(c[0])[1:-1]] = list(avg_freq_vec)
 
     CFreqM = pd.DataFrame(c_vec_dic)
+    CFreqM.index = freq_mat.index
     CppmiM = ppmi(CFreqM)
+    CppmiM = CppmiM.loc[CppmiM.index.isin(feature)]
     ComM = sim_mat(CppmiM, list(CppmiM.columns))
     return CFreqM, CppmiM, ComM
-
-
-"""## Merge 2"""
 
 
 def str2tup(c):
@@ -251,13 +213,12 @@ def str2tup(c):
     return tuple(c)
 
 
-def merge_2(committee_mat, cos_mat):
+def merge_2(committee_mat, cos_mat, beta):
     new_C = []
     merged_lst = []
     c_lst = committee_mat.columns
     n_c = len(c_lst)
     for i in range(len(c_lst)):
-        # print(i)
         target_c = c_lst[i]
         neighbor_c_lst = committee_mat.nlargest(n_c, target_c).index.tolist()
         n = 0
@@ -268,7 +229,6 @@ def merge_2(committee_mat, cos_mat):
                 neighbor_c = neighbor_c_lst[-1]
             else:
                 neighbor_c = target_c
-        # print(neighbor_c)
         sim = committee_mat.loc[target_c, neighbor_c]
         if (sim >= beta) & (neighbor_c != target_c):
             merged_lst.append(neighbor_c)
@@ -298,10 +258,7 @@ def merge_2(committee_mat, cos_mat):
     return new_C_s
 
 
-"""## Save residuals"""
-
-
-def residuals(target_lemma_lst, ppmi_mat, c_ppmi_mat):
+def residuals(target_lemma_lst, ppmi_mat, c_ppmi_mat, gamma):
     R = []
     for l in target_lemma_lst:
         v_l = np.array(ppmi_mat[l])
@@ -325,26 +282,6 @@ def residuals(target_lemma_lst, ppmi_mat, c_ppmi_mat):
 
 """# Loop"""
 
-k = 50
-alpha = 0.5
-beta = 0.8
-gamma = 0.6
-window_size = 2
-
-TOP = 500
-
-token_lst = []
-for poem in hd.cleaned:
-    token_lst += poem
-
-lemma_freq_dic = dict(OrderedDict(Counter(token_lst).most_common()))
-target_lemma_lst = nlargest(TOP, lemma_freq_dic, key=lemma_freq_dic.get)
-
-# initial matrice
-FreqM = co_oc_mat(hd.source.str.split(','), window_size)
-ppmiM = ppmi(FreqM)
-CosM = sim_mat(ppmiM, target_lemma_lst)
-
 
 def search(k, alpha, beta, gamma, window_size, TOP):
 
@@ -356,8 +293,9 @@ def search(k, alpha, beta, gamma, window_size, TOP):
     target_lemma_lst = nlargest(TOP, lemma_freq_dic, key=lemma_freq_dic.get)
 
     # initial matrice
-    FreqM = co_oc_mat(hd.source.str.split(','), window_size)
+    FreqM = co_oc_mat(hd.cleaned, window_size)
     ppmiM = ppmi(FreqM)
+    ppmiM = ppmiM.loc[ppmiM.index.isin(feature), target_lemma_lst]
     CosM = sim_mat(ppmiM, target_lemma_lst)
 
     # loop
@@ -367,18 +305,18 @@ def search(k, alpha, beta, gamma, window_size, TOP):
     while R != []:
         n += 1
         # initial clustered committee
-        C = committee(R, CosM)
+        C = committee(R, CosM, k, alpha)
         # filter and sort
         C = filer_sort(C, CosM)
         # merge part1
         CFreqM, CppmiM, ComM = merge_1(C, FreqM)
         # merge part2
-        new_C_s = merge_2(ComM, CosM)
+        new_C_s = merge_2(ComM, CosM, beta)
         # repeat merge1
         C_new = sorted(new_C_s, key=lambda x: x[1])
         print(C_new)
         CFreqM_new, CppmiM_new, ComM_new = merge_1(C_new, FreqM)
-        R = residuals(R, ppmiM, CppmiM_new)
+        R = residuals(R, ppmiM, CppmiM_new, gamma)
         for c_new in C_new:
             c_new_checked = True
             for c_old in C_final:
@@ -428,4 +366,4 @@ def search(k, alpha, beta, gamma, window_size, TOP):
 
 # search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=4, TOP=1000)
 
-# search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=2, TOP=2000)
+search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=2, TOP=2000)
