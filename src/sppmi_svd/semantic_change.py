@@ -51,9 +51,6 @@ def cli_main():
     parser.add_argument("-o",
                         "--path_id2change",
                         help="path of id with degree of change")
-    parser.add_argument("-w",
-                        "--path_context_word",
-                        help="path of extracted context words")
     args = parser.parse_args()
     main(args)
 

@@ -25,9 +25,8 @@ python save_joint_pmi.py --dic_id2word dic_id2word.pkl \
        --path_models model/after_SPPMI_w-2_s-1 model/before_SPPMI_w-2_s-1 \
        --dim 1000
 
-python most_changed.py -p dic_id2word.pkl \
+python semantic_change.py -p dic_id2word.pkl \
        -m WV_joint_dim-*.npy \
-       -n 2000 \
        -o res/id2change.json \
 
 mv res/* ../../cache/
