@@ -28,8 +28,7 @@ python save_joint_pmi.py --dic_id2word dic_id2word.pkl \
 python most_changed.py -p dic_id2word.pkl \
        -m WV_joint_dim-*.npy \
        -n 2000 \
-       -o res/id2change.txt \
-       -w res/context_words.txt
+       -o res/id2change.json \
 
 mv res/* ../../cache/
 mv model ../../cache/sppmi-model
