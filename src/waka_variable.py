@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from logging import basicConfig, getLogger, DEBUG
 from collections import Counter, OrderedDict, defaultdict
+from itertools import chain
 from heapq import nlargest
 from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import ClusterWarning
@@ -18,36 +19,41 @@ from warnings import simplefilter
 simplefilter("ignore", ClusterWarning)
 
 
-def load_data(corpus_f, feature_f, id2lemma_f, top_n):
+def load_data(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature):
     """Load processed data.
 
-    :param corpus_f: corpus file
-    :param feature_f: context word file as feature/dimension
-    :param id2lemma: json file for transforming metacode to lemma
-    :param top_n: int, top n frequent types as targets
+    :param corpus_f: csv, path of corpus file
+    :param context_f: json, path of context words semantic change degree
+    :param id2lemma: json, path of file for transforming metacode to lemma
+    :param top_n_target: int, top n frequent types as targets
+    :param top_n_feature: int, top n semantically less changed context words
 
     :return feature: list, list of context feature words
     :return hd: pandas dataframe, hachidaishu text corpus
     :return id2lemma: dict, metacode to lemma dictionary
     :return target_type_lst: list, list of target types
     """
-    with open(id2lemma_f) as f_1, open(feature_f) as f_2:
+    with open(id2lemma_f) as f_1, open(context_f) as f_2:
         id2lemma = json.load(f_1)
-        feature = f_2.read().split("\n")
-    stop_lst = ['03', '04', '05', '07', '08', '09', '16']
-    type_lst = [x for x in id2lemma.keys() if x.split('-')[1] not in stop_lst]
+        context = json.load(f_2)
+    stop_lst = ["03", "04", "05", "07", "08", "09", "16"]
+    type_lst = [x for x in id2lemma.keys() if x.split("-")[1] not in stop_lst]
+    context_cleaned = {k: v for k, v in context.items() if k in type_lst}
+    feature = list(context_cleaned.keys())[:top_n_feature]
     hd = pd.read_csv(corpus_f)
-    hd['cleaned'] = hd.source.map(
-        lambda x: [x for x in x.split(',') if x in type_lst])
-    # 总处理token数
-    print('numbers of tokens: %s' % sum(hd.source.str.split(',').map(len)))
-    # clean后type数
-    print('numbers of types: %s' % len(type_lst))
+    hd["cleaned"] = hd.source.map(
+        lambda x: [x for x in x.split(",") if x in type_lst])
+    print("numbers of tokens: %s" % sum(hd.source.str.split(",").map(len)))
+    print("numbers of types: %s" % len(list(chain(hd.source.str.split(",")))))
+    print("numbers of tokens after cleaning: %s" % sum(hd.cleaned.map(len)))
+    print("numbers of types after cleaning: %s" % len(type_lst))
     token_lst = []
     for poem in hd.cleaned:
         token_lst += poem
     type_freq_dic = dict(OrderedDict(Counter(token_lst).most_common()))
-    target_type_lst = nlargest(top_n, type_freq_dic, key=type_freq_dic.get)
+    target_type_lst = nlargest(top_n_target,
+                               type_freq_dic,
+                               key=type_freq_dic.get)
     return feature, hd, id2lemma, target_type_lst
 
 
@@ -96,7 +102,7 @@ def ppmi_mat(freq_mat, feature, target_lst):
     row_totals = freq_mat.sum(axis=1)
     expected = np.outer(row_totals, col_totals) / total
     mat = freq_mat / expected
-    with np.errstate(divide='ignore'):
+    with np.errstate(divide="ignore"):
         mat = np.log2(mat)
     mat[np.isinf(mat)] = 0.0  # log(0) = 0
     mat[np.isnan(mat)] = 0.0
@@ -249,7 +255,7 @@ def merge_1(c_lst, freq_mat, feature):
     c_lst = list(map(lambda x: ",".join(x), list(list(zip(*c_lst))[0])))
     c_vec_dic = {}
     for c in c_lst:
-        avg_freq_vec = freq_mat[c.split(',')].mean(axis=1)
+        avg_freq_vec = freq_mat[c.split(",")].mean(axis=1)
         c_vec_dic[c] = list(avg_freq_vec)
 
     c_freq_mat = pd.DataFrame(c_vec_dic)
@@ -288,12 +294,12 @@ def merge_2(c_cos_mat, l_cos_mat, beta):
         sim = c_cos_mat.loc[target_c, neighbor_c]
         if (sim >= beta) & (neighbor_c != target_c):
             merged_lst.append(neighbor_c)
-            target_c = tuple(target_c.split(','))
-            neighbor_c = tuple(neighbor_c.split(','))
+            target_c = tuple(target_c.split(","))
+            neighbor_c = tuple(neighbor_c.split(","))
             new_c = tuple(target_c + neighbor_c)
             new_c = tuple(sorted(set(new_c)))
         else:
-            target_c = tuple(target_c.split(','))
+            target_c = tuple(target_c.split(","))
             new_c = target_c
         if new_c not in new_c_lst:
             new_c_lst.append(new_c)
@@ -324,7 +330,7 @@ def residuals(target_type_lst, ppmi_mat, c_ppmi_mat, gamma):
         v_l = np.array(ppmi_mat[l])
         sim = 0
         n = 0
-        c = ''
+        c = ""
         while (n < len(c_ppmi_mat.columns)) & (sim < gamma):
             c = c_ppmi_mat.columns[n]
             v_c = np.array(c_ppmi_mat[c])
@@ -338,17 +344,19 @@ def residuals(target_type_lst, ppmi_mat, c_ppmi_mat, gamma):
     return res
 
 
-def main(corpus_f, feature_f, id2lemma_f, top_n_tar, top_n_feature, k, alpha,
-         beta, gamma, window_size):
+def main(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature, k,
+         alpha, beta, gamma, window_size):
     """Search lexical variable."""
-    basicConfig(format='%(asctime)s %(message)s', level=DEBUG)
+    basicConfig(format="%(asctime)s %(message)s", level=DEBUG)
     logger = getLogger(__name__)
     args = "test"
-    logger.debug(f'[DEBUG] args: {args}')
+    logger.debug(f"[DEBUG] args: {args}")
 
     logger.info("[INFO] load data...")
-    feature, hd, id2lemma, target_type_lst = load_data(corpus_f, feature_f,
-                                                       id2lemma_f, top_n_tar)
+    feature, hd, id2lemma, target_type_lst = load_data(corpus_f, context_f,
+                                                       id2lemma_f,
+                                                       top_n_target,
+                                                       top_n_feature)
 
     # initial matrice as input
     logger.info(
@@ -396,15 +404,15 @@ def main(corpus_f, feature_f, id2lemma_f, top_n_tar, top_n_feature, k, alpha,
     logger.info(f"[INFO] total {n} loops; summarizing results...")
     finalC = sorted(finalC, key=lambda x: x[1])
     summary = pd.DataFrame()
-    summary['bg_id'] = list(zip(*finalC))[0]
-    summary['lemma'] = summary.bg_id.map(
+    summary["bg_id"] = list(zip(*finalC))[0]
+    summary["lemma"] = summary.bg_id.map(
         lambda x: tuple([id2lemma[l][0] for l in x]))
-    summary['reading'] = summary.bg_id.map(
+    summary["reading"] = summary.bg_id.map(
         lambda x: tuple([id2lemma[l][1] for l in x]))
-    summary['average_similarity'] = list(zip(*finalC))[1]
+    summary["average_similarity"] = list(zip(*finalC))[1]
     summary.to_csv(
-        '../res/k-{};alpha-{};beta-{};gamma-{};window_size-{};TOP-{}.csv'.
-        format(k, alpha, beta, gamma, window_size, top_n_tar),
+        "../res/k-{};alpha-{};beta-{};gamma-{};window_size-{};TOP-{}.csv".
+        format(k, alpha, beta, gamma, window_size, top_n_target),
         index=False)
     logger.info("[INFO] wrote results.")
 
@@ -430,10 +438,10 @@ def main(corpus_f, feature_f, id2lemma_f, top_n_tar, top_n_feature, k, alpha,
 # search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=4, TOP=1000)
 
 main(corpus_f="../data/parsed_hd.csv",
-     feature_f="../cache/context_words.txt",
+     context_f="../cache/id2change.txt",
      id2lemma_f="../data/id2lemma.json",
      top_n_feature=1500,
-     top_n_tar=2000,
+     top_n_target=2000,
      window_size=2,
      k=100,
      alpha=0.5,
