@@ -12,14 +12,21 @@ import pandas as pd
 from logging import basicConfig, getLogger, DEBUG
 from collections import Counter, OrderedDict, defaultdict
 from itertools import chain
+from tqdm import tqdm
 from heapq import nlargest
 from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import ClusterWarning
 from warnings import simplefilter
 simplefilter("ignore", ClusterWarning)
 
+basicConfig(format="%(asctime)s %(message)s", level=DEBUG)
+logger = getLogger(__name__)
+args = "test"
+logger.debug(f"[DEBUG] args: {args}")
 
-def load_data(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature):
+
+def load_data(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature,
+              only_content_feature):
     """Load processed data.
 
     :param corpus_f: csv, path of corpus file
@@ -38,8 +45,9 @@ def load_data(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature):
         context = json.load(f_2)
     stop_lst = ["03", "04", "05", "07", "08", "09", "16"]
     type_lst = [x for x in id2lemma.keys() if x.split("-")[1] not in stop_lst]
-    context_cleaned = {k: v for k, v in context.items() if k in type_lst}
-    feature = list(context_cleaned.keys())[:top_n_feature]
+    if only_content_feature:
+        context = {k: v for k, v in context.items() if k in type_lst}
+    feature = list(context.keys())[:top_n_feature]
     hd = pd.read_csv(corpus_f)
     hd["cleaned"] = hd.source.map(
         lambda x: [x for x in x.split(",") if x in type_lst])
@@ -81,7 +89,10 @@ def co_oc_mat(texts, window_size, feature):
                                      dtype=np.int16),
                        index=feature,
                        columns=types)
-    for key, value in count_d.items():
+    pbar = tqdm(count_d.items())
+    for key, value in pbar:
+        # pbar.set_description(f"writing {str(key)}")
+        pbar.set_description("writing")
         mat.at[key[0], key[1]] = value
         mat.at[key[1], key[0]] = value
     return mat
@@ -126,11 +137,14 @@ def cos_mat(ppmi_mat, target_type_lst):
     """
     sim_d = defaultdict()
     t_set = sorted(set(target_type_lst))
-    for i in range(len(target_type_lst)):
+    pbar = tqdm(range(len(target_type_lst)))
+    for i in pbar:
+        pbar.set_description("computing similarity")
         t_i = target_type_lst[i]
         next_t = target_type_lst[i:]
         for t_j in next_t:
             key = tuple(sorted([t_i, t_j]))
+            # pbar.set_description(f"computing similarity {key}")
             v_t_i = np.array(ppmi_mat[t_i])
             v_t_j = np.array(ppmi_mat[t_j])
             sim_d[key] = _cosin_sim(v_t_i, v_t_j)
@@ -138,7 +152,10 @@ def cos_mat(ppmi_mat, target_type_lst):
                                      dtype=np.float64),
                        index=t_set,
                        columns=t_set)
-    for key, value in sim_d.items():
+    pbar = tqdm(sim_d.items())
+    for key, value in pbar:
+        # pbar.set_description(f"writing similarity {key}")
+        pbar.set_description(f"writing similarity")
         mat.at[key[0], key[1]] = value
         mat.at[key[1], key[0]] = value
     return mat
@@ -254,7 +271,9 @@ def merge_1(c_lst, freq_mat, feature):
     """
     c_lst = list(map(lambda x: ",".join(x), list(list(zip(*c_lst))[0])))
     c_vec_dic = {}
-    for c in c_lst:
+    pbar = tqdm(c_lst)
+    for c in pbar:
+        # pbar.set_description(f"average frequency vec {c}")
         avg_freq_vec = freq_mat[c.split(",")].mean(axis=1)
         c_vec_dic[c] = list(avg_freq_vec)
 
@@ -280,12 +299,15 @@ def merge_2(c_cos_mat, l_cos_mat, beta):
     merged_lst = []
     c_lst = c_cos_mat.columns
     n_c = len(c_lst)
-    for i in range(len(c_lst)):
+    pbar = tqdm(range(len(c_lst)))
+    for i in pbar:
+        pbar.set_description("try merging")
         target_c = c_lst[i]
         neighbor_c_lst = c_cos_mat.nlargest(n_c, target_c).index.tolist()
         n = 0
         neighbor_c = None
         while (neighbor_c in merged_lst) | (neighbor_c is None):
+            # pbar.set_description(f"try merging {target_c} and {neighbor_c}")
             n += 1
             if n < len(c_cos_mat):
                 neighbor_c = neighbor_c_lst[-1]
@@ -305,7 +327,10 @@ def merge_2(c_cos_mat, l_cos_mat, beta):
             new_c_lst.append(new_c)
 
     new_c_lst_with_sim = {}
-    for c in new_c_lst:
+    pbar = tqdm(new_c_lst)
+    for c in pbar:
+        # pbar.set_description(f"computing average similarity {c}")
+        pbar.set_description("computing average similarity")
         new_c_lst_with_sim[c] = _avg_sim(l_cos_mat, c)
 
     new_c_lst_with_sim = list(
@@ -326,7 +351,7 @@ def residuals(target_type_lst, ppmi_mat, c_ppmi_mat, gamma):
     :return res: list, list of residual types
     """
     res = []
-    for l in target_type_lst:
+    for l in tqdm(target_type_lst):
         v_l = np.array(ppmi_mat[l])
         sim = 0
         n = 0
@@ -344,19 +369,15 @@ def residuals(target_type_lst, ppmi_mat, c_ppmi_mat, gamma):
     return res
 
 
-def main(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature, k,
-         alpha, beta, gamma, window_size):
+def main(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature,
+         only_content_feature, k, alpha, beta, gamma, window_size):
     """Search lexical variable."""
-    basicConfig(format="%(asctime)s %(message)s", level=DEBUG)
-    logger = getLogger(__name__)
-    args = "test"
-    logger.debug(f"[DEBUG] args: {args}")
-
     logger.info("[INFO] load data...")
     feature, hd, id2lemma, target_type_lst = load_data(corpus_f, context_f,
                                                        id2lemma_f,
                                                        top_n_target,
-                                                       top_n_feature)
+                                                       top_n_feature,
+                                                       only_content_feature)
 
     # initial matrice as input
     logger.info(
@@ -438,10 +459,11 @@ def main(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature, k,
 # search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=4, TOP=1000)
 
 main(corpus_f="../data/parsed_hd.csv",
-     context_f="../cache/id2change.txt",
+     context_f="../cache/id2change.json",
      id2lemma_f="../data/id2lemma.json",
-     top_n_feature=1500,
-     top_n_target=2000,
+     top_n_feature=3000,
+     top_n_target=1000,
+     only_content_feature=False,
      window_size=2,
      k=100,
      alpha=0.5,
