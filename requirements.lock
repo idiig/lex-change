@@ -3,3 +3,5 @@ numpy==1.17.3
 tqdm==4.64.0
 scipy==1.2.0
 scikit-learn==1.0.2
+hydra==2.5.0
+optuna==2.10.1
