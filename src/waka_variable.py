@@ -432,8 +432,8 @@ def main(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature,
         lambda x: tuple([id2lemma[l][1] for l in x]))
     summary["average_similarity"] = list(zip(*finalC))[1]
     summary.to_csv(
-        "../res/k-{};alpha-{};beta-{};gamma-{};window_size-{};TOP-{}.csv".
-        format(k, alpha, beta, gamma, window_size, top_n_target),
+        "../res/k-{};alpha-{};beta-{};gamma-{};window_size-{}.csv".format(
+            k, alpha, beta, gamma, window_size),
         index=False)
     logger.info("[INFO] wrote results.")
 
@@ -458,14 +458,14 @@ def main(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature,
 
 # search(k=100, alpha=0.5, beta=0.8, gamma=0.6, window_size=4, TOP=1000)
 
-main(corpus_f="../data/parsed_hd.csv",
-     context_f="../cache/id2change.json",
-     id2lemma_f="../data/id2lemma.json",
-     top_n_feature=3000,
-     top_n_target=1000,
-     only_content_feature=False,
-     window_size=2,
-     k=100,
-     alpha=0.5,
-     beta=0.8,
-     gamma=0.6)
+# main(corpus_f="../data/parsed_hd.csv",
+#      context_f="../cache/id2change.json",
+#      id2lemma_f="../data/id2lemma.json",
+#      top_n_feature=3000,
+#      top_n_target=1000,
+#      only_content_feature=False,
+#      window_size=2,
+#      k=100,
+#      alpha=0.5,
+#      beta=0.8,
+#      gamma=0.6)
