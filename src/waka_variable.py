@@ -13,6 +13,8 @@ from logging import basicConfig, getLogger, DEBUG
 from collections import Counter, OrderedDict, defaultdict
 from itertools import chain
 from tqdm import tqdm
+from omegaconf.dictconfig import DictConfig
+from dataclasses import dataclass
 from heapq import nlargest
 from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import ClusterWarning
@@ -369,8 +371,8 @@ def residuals(target_type_lst, ppmi_mat, c_ppmi_mat, gamma):
     return res
 
 
-def main(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature,
-         only_content_feature, k, alpha, beta, gamma, window_size):
+def search(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature,
+           only_content_feature, k, alpha, beta, gamma, window_size):
     """Search lexical variable."""
     logger.info("[INFO] load data...")
     feature, hd, id2lemma, target_type_lst = load_data(corpus_f, context_f,
@@ -424,18 +426,19 @@ def main(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature,
                 finalC.append(c_new)
     logger.info(f"[INFO] total {n} loops; summarizing results...")
     finalC = sorted(finalC, key=lambda x: x[1])
-    summary = pd.DataFrame()
-    summary["bg_id"] = list(zip(*finalC))[0]
-    summary["lemma"] = summary.bg_id.map(
-        lambda x: tuple([id2lemma[l][0] for l in x]))
-    summary["reading"] = summary.bg_id.map(
-        lambda x: tuple([id2lemma[l][1] for l in x]))
-    summary["average_similarity"] = list(zip(*finalC))[1]
-    summary.to_csv(
-        "../res/k-{};alpha-{};beta-{};gamma-{};window_size-{}.csv".format(
-            k, alpha, beta, gamma, window_size),
-        index=False)
+    # summary = pd.DataFrame()
+    # summary["bg_id"] = list(zip(*finalC))[0]
+    # summary["lemma"] = summary.bg_id.map(
+    #     lambda x: tuple([id2lemma[l][0] for l in x]))
+    # summary["reading"] = summary.bg_id.map(
+    #     lambda x: tuple([id2lemma[l][1] for l in x]))
+    # summary["average_similarity"] = list(zip(*finalC))[1]
+    # summary.to_csv(
+    #     "../res/k-{};alpha-{};beta-{};gamma-{};window_size-{}.csv".format(
+    #         k, alpha, beta, gamma, window_size),
+    #     index=False)
     logger.info("[INFO] wrote results.")
+    return finalC
 
 
 # search(k=50, alpha=0.5, beta=0.8, gamma=0.6, window_size=2, TOP=500)
@@ -469,3 +472,75 @@ def main(corpus_f, context_f, id2lemma_f, top_n_target, top_n_feature,
 #      alpha=0.5,
 #      beta=0.8,
 #      gamma=0.6)
+
+
+@dataclass
+class Results:
+    """Results metacode matching degrees."""
+
+    config: DictConfig
+
+    def __post_init__(self):
+        self.res_df = self._df()
+
+    def _df(self):
+        res = search(self.config)
+        res_df = pd.DataFrame()
+        res_df["bg_id"] = list(zip(*res))[0]
+        # average similarity among variable
+        res_df["avg_sim"] = list(zip(*res))[1]
+        res_df = res_df[len(res_df.bg_id) >= 2]
+        with open("../data/id2lemma.json") as fn:
+            id2lemma = json.load(fn)
+        res_df["lemma"] = res_df.bg_id.map(
+            lambda x: tuple([id2lemma[l][0] for l in x]))
+        # reading
+        res_df["rdg"] = res_df.bg_id.map(
+            lambda x: tuple([id2lemma[l][1] for l in x]))
+        # number of variants
+        res_df["num"] = res_df.bg_id.apply(len)
+        res_df["pos_match"], res_df["group_match"], res_df[
+            "field_match"] = res_df["bg_id"].apply(self._match)
+        return res_df
+
+    @staticmethod
+    def _match(var_):
+        """Check whether match at specific levels.
+
+        :param pair: tuple of str, pseudo lexical variable
+
+        :return pos_match: bool, whether match at pos level
+        :return group_match: bool, whether match at group level
+        :return field_match: bool, whether match at field level
+        """
+        assert len(var_) != 1
+        first_l_decomp = var_[0].split("-")
+        pos_match = all(l.split("-")[1] == first_l_decomp[1] for l in var_)
+        group_match = all(
+            l.split("-")[1:3] == first_l_decomp[1:2] for l in var_)
+        field_match = all(
+            l.split("-")[1:4] == first_l_decomp[1:3] for l in var_)
+        return pos_match, group_match, field_match
+
+    def write_(self):
+        """Write results csv."""
+        self.res_df.to_csv(
+            "../res/k-{}_alpha-{}_beta-{}_gamma-{}_window_size-{}.csv".format(
+                self.config.k, self.config.alpha, self.config.beta,
+                self.config.gamma, self.config.window_size),
+            index=False)
+
+    @property
+    def num_pos_match(self):
+        """Obtain number of correct pos level matching."""
+        return sum(self.res_df.pos_match.to_list())
+
+    @property
+    def num_group_match(self):
+        """Obtain number of correct group level matching."""
+        return sum(self.res_df.group_match.to_list())
+
+    @property
+    def num_field_match(self):
+        """Obtain number of correct field level matching."""
+        return sum(self.res_df.field_match.to_list())

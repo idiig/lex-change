@@ -5,6 +5,7 @@ Input: path of results, a csv file.
 import pandas as pd
 from omegaconf.dictconfig import DictConfig
 import waka_variable
+from dataclasses import dataclass
 
 
 @dataclass
